@@ -6,6 +6,7 @@
 
 typedef struct USERDATA {
     const char* (*GetName)(void*);
+    const char* (*GetPhone)(void*);
 
     char szName[64];
     char szPhone[64];
@@ -20,15 +21,18 @@ void PrintList(LIST_INFO* pList) {
         else
         {
             USERDATA* pUser = pTmp->pData;
-            printf("Prev: [%p], Curr: [%p], Next: [%p], Name: [%s]\n", pTmp->prev, pTmp, pTmp->next, pUser->GetName(pUser));
+            printf("Prev: [%p], Curr: [%p], Next: [%p], Name: [%s], Phone: [%s]\n", pTmp->prev, pTmp, pTmp->next, pUser->GetName(pUser), pUser->GetPhone(pUser));
         }
-
         pTmp = pTmp->next;
     }
 }
 
 const char* GetNameFromUserData(const USERDATA* pData) {
     return pData->szName;
+}
+
+const char* GetPhoneFromUserData(const USERDATA* pData) {
+    return pData->szPhone;
 }
 
 USERDATA* CreateUserData(const char* pszName, const char* pszPhone) {
@@ -39,6 +43,7 @@ USERDATA* CreateUserData(const char* pszName, const char* pszPhone) {
     strcpy_s(pData->szPhone, sizeof(pData->szPhone), pszPhone);
 
     pData->GetName = GetNameFromUserData;
+    pData->GetPhone = GetPhoneFromUserData;
     return pData;
 }
 
@@ -66,7 +71,7 @@ int main()
     PrintList(&userList02);
 
     DeleteNode(&userList01, "JSH", GetNameFromUserData);
-    DeleteNode(&userList02, "TEST01", GetNameFromUserData);
+    DeleteNode(&userList02, "010-1111-1111", GetPhoneFromUserData);
 
     ReleaseList(&userList01);
     ReleaseList(&userList02);
