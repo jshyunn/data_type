@@ -3,14 +3,14 @@
 #include <string.h>
 
 typedef struct USERDATA {
+    const char* (*GetName)(void*);
+
     char szName[64];
     char szPhone[64];
 } USERDATA;
 
 typedef struct NODE {
     void* pData;
-
-    const char* (*GetName)(void*);
 
     struct NODE* prev;
     struct NODE* next;
@@ -35,7 +35,7 @@ void InitList() {
     printf("pHead: [%p], pTail: [%p], Size: [%d]\n", g_pHead, g_pTail, g_nSize);
 }
 
-void InsertBefore(NODE* pPivotNode, void* pData, const char* (*pfData)(void*)) {
+void InsertBefore(NODE* pPivotNode, void* pData) {
     NODE* pNewNode = (NODE*)malloc(sizeof(NODE));
 
     memset(pNewNode, 0, sizeof(NODE));
@@ -43,26 +43,25 @@ void InsertBefore(NODE* pPivotNode, void* pData, const char* (*pfData)(void*)) {
     pNewNode->next = pPivotNode;
     pNewNode->prev = pPivotNode->prev;
     pNewNode->pData = pData;
-    pNewNode->GetName = pfData;
 
     pPivotNode->prev = pNewNode;
     pNewNode->prev->next = pNewNode;
     g_nSize++;
 }
 
-void InsertAtHead(void* pData, const char* (*pfData)(void*)) {
-    InsertBefore(g_pHead->next, pData, pfData);
+void InsertAtHead(void* pData) {
+    InsertBefore(g_pHead->next, pData);
 
     printf("InsertAtHead(): [%p]\n", pData);
 }
 
-void InsertAtTail(void* pData, const char* (*pfData)(void*)) {
-    InsertBefore(g_pTail, pData, pfData);
+void InsertAtTail(void* pData) {
+    InsertBefore(g_pTail, pData);
 
     printf("InsertAtTail(): [%p]\n", pData);
 }
 
-void InsertAt(int idx, void* pData, const char* (*pfData)(void*)) {
+void InsertAt(int idx, void* pData) {
     if (idx > g_nSize - 2)
     {
         printf("InsertAt(): Invalid Index[%d]\n", idx);
@@ -73,7 +72,7 @@ void InsertAt(int idx, void* pData, const char* (*pfData)(void*)) {
     while (pTmp != NULL) {
         if (i == idx)
         {
-            InsertBefore(pTmp, pData, pfData);
+            InsertBefore(pTmp, pData);
         }
         pTmp = pTmp->next;
         i++;
@@ -112,7 +111,8 @@ NODE* GetAt(int idx) {
 NODE* FindNode(const char* pszKey) {
     NODE* pTmp = g_pHead->next;
     while (pTmp != g_pTail) {
-        if (strcmp(pTmp->GetName(pTmp->pData), pszKey) == 0) return pTmp;
+        USERDATA* pUser = pTmp->pData;
+        if (strcmp(pUser->GetName(pUser), pszKey) == 0) return pTmp;
         pTmp = pTmp->next;
     }
     return NULL;
@@ -157,7 +157,10 @@ void PrintList() {
         if (pTmp == g_pHead || pTmp == g_pTail)
             printf("Prev: [%p], Curr: [%p], Next: [%p], Name: Dummy\n", pTmp->prev, pTmp, pTmp->next);
         else
-            printf("Prev: [%p], Curr: [%p], Next: [%p], Name: [%s]\n", pTmp->prev, pTmp, pTmp->next, pTmp->GetName(pTmp->pData));
+        {
+            USERDATA* pUser = pTmp->pData;
+            printf("Prev: [%p], Curr: [%p], Next: [%p], Name: [%s]\n", pTmp->prev, pTmp, pTmp->next, pUser->GetName(pUser));
+        }
 
         pTmp = pTmp->next;
     }
@@ -167,22 +170,26 @@ const char* GetNameFromUserData(const USERDATA* pData) {
     return pData->szName;
 }
 
-void CreateUserData(const char* pszName, const char* pszPhone) {
+USERDATA* CreateUserData(const char* pszName, const char* pszPhone) {
     USERDATA* pData = (USERDATA*)malloc(sizeof(USERDATA));
     memset(pData, 0, sizeof(USERDATA));
 
     strcpy_s(pData->szName, sizeof(pData->szName), pszName);
     strcpy_s(pData->szPhone, sizeof(pData->szPhone), pszPhone);
 
-    InsertAtHead(pData, GetNameFromUserData);
+    pData->GetName = GetNameFromUserData;
+    return pData;
 }
 
 int main()
 {
     InitList();
 
-    CreateUserData("Seunghyun", "010-1111-1111");
-    CreateUserData("JSH", "010-2222-2222");
+    USERDATA* pUser = NULL;
+    pUser = CreateUserData("Seunghyun", "010-1111-1111");
+    InsertAtHead(pUser);
+    pUser = CreateUserData("JSH", "010-2222-2222");
+    InsertAtHead(pUser);
 
     PrintList();
 
